@@ -12,26 +12,28 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  Image,
   TouchableHighlight,
-  useColorScheme,
+  Appearance,
 } from 'react-native';
 
 
 const App = () => {
-  const isDarkMode = useColorScheme() === 'dark';
+  const col = Appearance.getColorScheme();
+  const isDarkMode =  col === 'dark';
 
   const styles = StyleSheet.create({
     containerStyle:{
-      backgroundColor: isDarkMode ? 'black' : 'white',
+      backgroundColor: isDarkMode ? '#002b36' : '#fdf6e3',
       flex: 1,
-      justifyContent: 'center',
       alignItems: 'center'
     },
     pickBtnStyle: {
       width: '80%',
-      backgroundColor: 'red',
+      backgroundColor: '#dc322f',
       borderRadius: 30,
       paddingVertical: 20,  
+      marginBottom: 10,
     },
     btnTextStyle: {
       color: 'white',
@@ -41,14 +43,15 @@ const App = () => {
   });
   
   const onBtnPress = () => {
-    console.log("btn press!");
-    console.log("another log message!");
+    console.log('btn press!');
+    console.log('another log message!');
   };
 
   return (
     <SafeAreaView style={styles.containerStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent={true} />
-      <TouchableHighlight style={styles.pickBtnStyle} onPress={onBtnPress} activeOpacity={0.5}>
+      <StatusBar backgroundColor={styles.containerStyle.backgroundColor} barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent={false} />
+      <Image style={{height: 400}}></Image>
+      <TouchableHighlight style={styles.pickBtnStyle} onPress={onBtnPress} activeOpacity={0.8} underlayColor={styles.containerStyle.backgroundColor}>
         <Text style={styles.btnTextStyle}>Pick Image</Text>
       </TouchableHighlight>
     </SafeAreaView>
