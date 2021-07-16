@@ -6,22 +6,28 @@
  * @flow strict-local
  */
 
-import React from 'react';
+import React, {useState} from 'react';
 import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   Image,
+  View,
   TouchableHighlight,
   Appearance,
 } from 'react-native';
 
+import {launchImageLibrary} from 'react-native-image-picker';
+
 
 const App = () => {
-  const col = Appearance.getColorScheme();
-  const isDarkMode =  col === 'dark';
-
+  
+  const [currImage,setImage] = useState({});
+  
+  
+  const isDarkMode =  Appearance.getColorScheme() === 'dark';
+  
   const styles = StyleSheet.create({
     containerStyle:{
       backgroundColor: isDarkMode ? '#002b36' : '#fdf6e3',
@@ -43,14 +49,25 @@ const App = () => {
   });
   
   const onBtnPress = () => {
-    console.log('btn press!');
-    console.log('another log message!');
+    launchImageLibrary({
+      mediaType: 'photo',
+      quality: 1,
+    },(resp) => {
+      if(!resp.didCancel){
+        if(resp.errorCode) console.log(resp.errorMessage);
+        else{
+          setImage(resp.assets[0]);
+        }
+      }
+    });
   };
 
   return (
     <SafeAreaView style={styles.containerStyle}>
       <StatusBar backgroundColor={styles.containerStyle.backgroundColor} barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent={false} />
-      <Image style={{height: 400}}></Image>
+      <View style={{width: 320, height: 320, backgroundColor:'red', marginTop: 80, marginBottom: 50}}>
+        <Image style={{ width: 320, height: 320}} source={currImage} resizeMode="contain"></Image>
+      </View>
       <TouchableHighlight style={styles.pickBtnStyle} onPress={onBtnPress} activeOpacity={0.8} underlayColor={styles.containerStyle.backgroundColor}>
         <Text style={styles.btnTextStyle}>Pick Image</Text>
       </TouchableHighlight>
