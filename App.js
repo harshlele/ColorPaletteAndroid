@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import {
   SafeAreaView,
   StatusBar,
@@ -16,6 +16,7 @@ import {
   View,
   TouchableHighlight,
   Appearance,
+  Animated, Easing
 } from 'react-native';
 
 import {launchImageLibrary} from 'react-native-image-picker';
@@ -24,9 +25,30 @@ import {launchImageLibrary} from 'react-native-image-picker';
 const App = () => {
   
   const [currImage,setImage] = useState({});
-  const [dispImgW, setDispImgW] = useState(320);
-  const [dispImgH, setDispImgH] = useState(320);
+  const dispImgW = useRef(new Animated.Value(320)).current;
+  const dispImgH = useRef(new Animated.Value(320)).current;
   
+  const duration = 200;
+  const easing = Easing.linear;
+
+  const animImgWidth = (newWidth) => {
+    Animated.timing(dispImgW,{
+      toValue: newWidth,
+      useNativeDriver: false,
+      duration,
+      easing
+    }).start();
+  };
+
+  const animImgHeight = (newHeight) => {
+    Animated.timing(dispImgH,{
+      toValue: newHeight,
+      useNativeDriver: false,
+      duration,
+      easing
+    }).start();
+  };
+
   const isDarkMode =  Appearance.getColorScheme() === 'dark';
   
   const styles = StyleSheet.create({
@@ -49,13 +71,24 @@ const App = () => {
       fontSize: 18
     },
     imgCoverStyle: { 
-      padding: 10, 
-      backgroundColor: '#dc322f', 
+      padding: 5, 
+      backgroundColor: currImage.uri ? '#dc322f' : 'transparent', 
       marginTop: 80, 
       marginBottom: 50, 
       borderRadius: 10
     }
   });
+
+  const setImgSize = (aspRatio) => {
+    if(aspRatio > 1){
+      animImgWidth(320);
+      animImgHeight(320/aspRatio);
+    }
+    else{
+      animImgHeight(320);
+      animImgWidth(320 * aspRatio);
+    }
+  };
   
   const onBtnPress = () => {
     launchImageLibrary({
@@ -69,23 +102,15 @@ const App = () => {
           let aspRatio = img.width/img.height;
 
           /*
-           width/height values from Image are more accurate (esp pics taken from the camera)
-           (values from the library are exchange(height value in width property, vice versa))
+           width/height values from Image are more accurate (esp pics taken with the camera)
           */
           Image.getSize(img.uri,(width,height) => {
-            aspRatio = width/height;
+            setImgSize(width/height);
+          }, (error) => {
+            console.log(error);
+            setImgSize(aspRatio);
           });
-
-          if(aspRatio > 1){
-            setDispImgW(320);
-            setDispImgH(320/aspRatio);
-          }
-          else{
-            setDispImgH(320);
-            setDispImgW(320 * aspRatio);
-          }
           setImage({uri: img.uri});
-        
         }
       }
     });
@@ -95,7 +120,7 @@ const App = () => {
     <SafeAreaView style={styles.containerStyle}>
       <StatusBar backgroundColor={styles.containerStyle.backgroundColor} barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent={false} />
       <View style={styles.imgCoverStyle}>
-        <Image style={{ width: dispImgW, height: dispImgH}} source={currImage} resizeMode='contain'></Image>
+        <Animated.Image style={{ width: dispImgW, height: dispImgH, borderRadius: 5}} source={currImage} resizeMode='contain'></Animated.Image>
       </View> 
       <TouchableHighlight style={styles.pickBtnStyle} onPress={onBtnPress} activeOpacity={0.8} underlayColor={styles.containerStyle.backgroundColor}>
         <Text style={styles.btnTextStyle}>Pick Image</Text>
