@@ -24,7 +24,8 @@ import {launchImageLibrary} from 'react-native-image-picker';
 const App = () => {
   
   const [currImage,setImage] = useState({});
-  
+  const [dispImgW, setDispImgW] = useState(320);
+  const [dispImgH, setDispImgH] = useState(320);
   
   const isDarkMode =  Appearance.getColorScheme() === 'dark';
   
@@ -32,19 +33,27 @@ const App = () => {
     containerStyle:{
       backgroundColor: isDarkMode ? '#002b36' : '#fdf6e3',
       flex: 1,
-      alignItems: 'center'
+      alignItems: 'center',
+      justifyContent: 'space-between'
     },
     pickBtnStyle: {
       width: '80%',
       backgroundColor: '#dc322f',
       borderRadius: 30,
       paddingVertical: 20,  
-      marginBottom: 10,
+      marginBottom: 200,
     },
     btnTextStyle: {
       color: 'white',
       textAlign: 'center',
       fontSize: 18
+    },
+    imgCoverStyle: { 
+      padding: 10, 
+      backgroundColor: '#dc322f', 
+      marginTop: 80, 
+      marginBottom: 50, 
+      borderRadius: 10
     }
   });
   
@@ -56,7 +65,27 @@ const App = () => {
       if(!resp.didCancel){
         if(resp.errorCode) console.log(resp.errorMessage);
         else{
-          setImage(resp.assets[0]);
+          let img = resp.assets[0];
+          let aspRatio = img.width/img.height;
+
+          /*
+           width/height values from Image are more accurate (esp pics taken from the camera)
+           (values from the library are exchange(height value in width property, vice versa))
+          */
+          Image.getSize(img.uri,(width,height) => {
+            aspRatio = width/height;
+          });
+
+          if(aspRatio > 1){
+            setDispImgW(320);
+            setDispImgH(320/aspRatio);
+          }
+          else{
+            setDispImgH(320);
+            setDispImgW(320 * aspRatio);
+          }
+          setImage({uri: img.uri});
+        
         }
       }
     });
@@ -65,9 +94,9 @@ const App = () => {
   return (
     <SafeAreaView style={styles.containerStyle}>
       <StatusBar backgroundColor={styles.containerStyle.backgroundColor} barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent={false} />
-      <View style={{width: 320, height: 320, backgroundColor:'red', marginTop: 80, marginBottom: 50}}>
-        <Image style={{ width: 320, height: 320}} source={currImage} resizeMode="contain"></Image>
-      </View>
+      <View style={styles.imgCoverStyle}>
+        <Image style={{ width: dispImgW, height: dispImgH}} source={currImage} resizeMode='contain'></Image>
+      </View> 
       <TouchableHighlight style={styles.pickBtnStyle} onPress={onBtnPress} activeOpacity={0.8} underlayColor={styles.containerStyle.backgroundColor}>
         <Text style={styles.btnTextStyle}>Pick Image</Text>
       </TouchableHighlight>
