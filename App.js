@@ -16,7 +16,9 @@ import {
   View,
   TouchableHighlight,
   Appearance,
-  Animated, Easing
+  Animated, 
+  Easing,
+  NativeModules
 } from 'react-native';
 
 import {launchImageLibrary} from 'react-native-image-picker';
@@ -24,6 +26,8 @@ import {launchImageLibrary} from 'react-native-image-picker';
 
 const App = () => {
   
+  const { ColorPaletteModule } = NativeModules;
+ 
   const [currImage,setImage] = useState({});
   const dispImgW = useRef(new Animated.Value(320)).current;
   const dispImgH = useRef(new Animated.Value(320)).current;
@@ -111,6 +115,13 @@ const App = () => {
             setImgSize(aspRatio);
           });
           setImage({uri: img.uri});
+          
+          ColorPaletteModule.getSize([1,2,3,4,5]).then(resp => {
+            console.log('IN JS: ' + resp);
+          }).catch(e => {
+            console.log('IN JS ERROR: ' + e);
+          });
+      
         }
       }
     });
