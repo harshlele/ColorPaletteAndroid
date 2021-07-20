@@ -116,7 +116,8 @@ const App = () => {
           });
           setImage({uri: img.uri});
           
-          ColorPaletteModule.getSize([1,2,3,4,5]).then(resp => {
+
+          ColorPaletteModule.getColorPalette(img.uri).then(resp => {
             console.log('IN JS: ' + resp);
           }).catch(e => {
             console.log('IN JS ERROR: ' + e);
