@@ -34,10 +34,18 @@ public class ColorPaletteModule extends ReactContextBaseJavaModule{
     public void getColorPalette(String uri, Promise promise){
         try{
             ImageDecoder.Source source = ImageDecoder.createSource(c.getContentResolver(),Uri.parse(uri));
-            Bitmap bitmap = ImageDecoder.decodeBitmap(source);
+            Bitmap bitmap = ImageDecoder.decodeBitmap(source).copy(Bitmap.Config.ARGB_8888, true);
             Log.d("ColorPaletteModule", "WIDTH: " + bitmap.getWidth());
             Log.d("ColorPaletteModule", "HEIGHT: " + bitmap.getHeight());
-            promise.resolve(bitmap.getWidth() * bitmap.getHeight());
+            
+            int[] pixels = new int[bitmap.getWidth() * bitmap.getHeight()];
+
+            bitmap.getPixels(pixels,0,bitmap.getWidth(),0,0,bitmap.getWidth(),bitmap.getHeight());
+
+            GenColorPalette g = new GenColorPalette(pixels);
+            g.genPalette(promise);
+            
+            
         }
         catch(IOException io){
             Log.d("ColorPaletteModule", "ERROR: " + io.toString());
