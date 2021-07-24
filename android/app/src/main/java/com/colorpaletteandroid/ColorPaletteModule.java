@@ -34,13 +34,23 @@ public class ColorPaletteModule extends ReactContextBaseJavaModule{
     public void getColorPalette(String uri, Promise promise){
         try{
             ImageDecoder.Source source = ImageDecoder.createSource(c.getContentResolver(),Uri.parse(uri));
-            Bitmap bitmap = ImageDecoder.decodeBitmap(source).copy(Bitmap.Config.ARGB_8888, true);
-            Log.d("ColorPaletteModule", "WIDTH: " + bitmap.getWidth());
-            Log.d("ColorPaletteModule", "HEIGHT: " + bitmap.getHeight());
+            Bitmap bitmap = ImageDecoder.decodeBitmap(source).copy(Bitmap.Config.ARGB_8888, true);            
+            int newWidth, newHeight, oldWidth = bitmap.getWidth(), oldHeight = bitmap.getHeight();
+            float aspectRatio = oldWidth / (float) oldHeight;
             
-            int[] pixels = new int[bitmap.getWidth() * bitmap.getHeight()];
+            if(oldWidth > oldHeight){
+                newWidth = 1000;
+                newHeight = Math.round(1000/aspectRatio);
+            }
+            else{
+                newHeight = 1000;
+                newWidth = Math.round(1000 * aspectRatio);
+            }
 
-            bitmap.getPixels(pixels,0,bitmap.getWidth(),0,0,bitmap.getWidth(),bitmap.getHeight());
+            Bitmap resized = Bitmap.createScaledBitmap(bitmap,newWidth,newHeight,true);
+            int[] pixels = new int[newWidth * newHeight];
+
+            resized.getPixels(pixels,0,newWidth,0,0,newWidth,newHeight);
 
             GenColorPalette g = new GenColorPalette(pixels);
             g.genPalette(promise);
@@ -48,11 +58,11 @@ public class ColorPaletteModule extends ReactContextBaseJavaModule{
             
         }
         catch(IOException io){
-            Log.d("ColorPaletteModule", "ERROR: " + io.toString());
+            Log.d("ColorPaletteModule", "IO ERROR: " + io.toString());
             promise.reject(io.toString());
         }
         catch(Error e){
-            Log.d("ColorPaletteModule", "ERROR: " + e.toString());
+            Log.d("ColorPaletteModule", "GENCOLORPALETTE ERROR: " + e.toString());
             promise.reject(e.toString());
         }
     }
