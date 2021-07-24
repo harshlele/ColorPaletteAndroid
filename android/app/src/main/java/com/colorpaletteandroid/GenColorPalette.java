@@ -23,7 +23,6 @@ public class GenColorPalette{
     //for managing threads
     private final Object lock = new Object();
     private int iterationsDone = 0;
-    
     private ExecutorService eService = Executors.newFixedThreadPool(4);
     
 
@@ -59,7 +58,6 @@ public class GenColorPalette{
                         
                         assignCluster(pixels, clusterIndex, meds, diffToMed,clusterSizes);      
                         
-                        log("MEDS: " + Arrays.toString(meds) + "\n MAX: " + pixels.length);
                         synchronized(lock){
                             iterationsDone += 1;
                         }
@@ -73,7 +71,7 @@ public class GenColorPalette{
     }
 
     /**
-   * chooses initial medoids
+   * chooses initial medoids using the k-means++ algorithm
    * @param medArr      array of medoids that will be filled with initial medoids 
    * @param pixelArr    pixel array
    */
@@ -85,27 +83,43 @@ public class GenColorPalette{
         }
         */
         medArr[0] = new Random().nextInt(pixelArr.length);
-        double[] dists = new double[pixelArr.length];
+        int curr = 1;
+
+        while(curr < medArr.length){
+            double[] dists = new double[pixelArr.length];
     
-        double totalDist = 0;
-        for(int i = 0; i < pixelArr.length; i++){
-            if(i == medArr[0]) continue;
-            double sqDist = Math.pow(pixelArr[medArr[0]] - pixelArr[i],2);
-            totalDist += sqDist;
-            dists[i] = sqDist;
+            double totalDist = 0;
+            for(int i = 0; i < pixelArr.length; i++){
+                boolean centered = false;
+                double minDist = Double.MAX_VALUE;
+                for(int j = 0; j < curr;j++){
+                    if(medArr[j] == i) {
+                        centered = true;
+                        break;
+                    }
+                    
+                    double sqDist = Math.pow(pixelArr[medArr[j]] - pixelArr[i],2);
+                    if(minDist > sqDist) minDist = sqDist;
+                }
+                if(centered) continue;
+
+                totalDist += minDist;
+                dists[i] = minDist;
+    
+                
+
+            }
+    
+            DistributedRandomNumberGenerator gen = new DistributedRandomNumberGenerator(dists.length);
+            for(int k = 0; k < dists.length; k++){
+                if(dists[k] == 0) continue;
+                gen.addNumber(k, dists[k]/totalDist);
+            }
+
+            medArr[curr] = gen.getDistributedRandomNumber();
+            curr++;
         }
 
-        DistributedRandomNumberGenerator gen = new DistributedRandomNumberGenerator(dists.length);
-        for(int k = 0; k < dists.length; k++){
-            if(dists[k] == 0) continue;
-            gen.addNumber(k, dists[k]/totalDist);
-        }
-
-        int j = 1;
-        while(j < medArr.length){
-            medArr[j] = gen.getDistributedRandomNumber();
-            j++;
-        }
 
     }
 
