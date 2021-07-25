@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.lang.Runtime;
 
 import android.util.Log;
 
@@ -14,7 +15,7 @@ import android.util.Log;
 
 public class GenColorPalette{
     //no of clusters(ie. no of colors in the palette)   
-    private static int CLUSTERS = 5;
+    private static int CLUSTERS = 10;
     //pixel array
     private int[] pixels;
     //final palette that is returned
@@ -23,8 +24,9 @@ public class GenColorPalette{
     //for managing threads
     private final Object lock = new Object();
     private int iterationsDone = 0;
-    private ExecutorService eService = Executors.newFixedThreadPool(4);
+    private ExecutorService eService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     
+    int i = 0;
 
     GenColorPalette(int[] pixels){
         this.pixels = pixels;
@@ -42,12 +44,13 @@ public class GenColorPalette{
         }
         
 
-        for(int i = 0; i < 10; i++){
+        for(i = 0; i < 10; i++){
             eService.execute(new Runnable(){
                 int[] meds = new int[CLUSTERS];
                 int[] clusterSizes = new int[CLUSTERS];
                 int[] clusterIndex = new int[pixels.length];
                 int[] diffToMed = new int[pixels.length];
+                final int it = i; //for logging
                 @Override
                 public void run() {
                     try{
@@ -55,9 +58,18 @@ public class GenColorPalette{
                         Arrays.fill(diffToMed,Integer.MAX_VALUE);
                         
                         setInitMedoids(meds, pixels);
+                        //each cluster has at least 1 point(the medoid itself)
+                        Arrays.fill(clusterSizes, 1);           
                         
-                        assignCluster(pixels, clusterIndex, meds, diffToMed,clusterSizes);      
+                        log(it + " INIT: " + Arrays.toString(meds));
                         
+                        for(int j = 0; j < 100; j++){
+                            boolean changed = assignCluster(pixels, clusterIndex, meds, diffToMed, clusterSizes);      
+                            if(!changed) break;
+                            calcMedoids(pixels, clusterIndex, meds, clusterSizes);
+                            Arrays.fill(clusterSizes, 1);
+                        }
+                        log(it + " FINAL: " + Arrays.toString(meds));
                         synchronized(lock){
                             iterationsDone += 1;
                         }
@@ -132,7 +144,7 @@ public class GenColorPalette{
    * @param medoidArr       (size CLUSTERS) i'th element has the index(of an element in pixelArr) thats the medoid of the i'th cluster
    * @param diffArr         (same size as pixelArr) i'th element is the absolute difference between the i'th element in pixelArr 
    *                        and the medoid of the cluster it belongs to
-   * @param clusterSizes    i'th element is the size of the i'th cluster
+   * @param clusterSizes    (size CLUSTERS) i'th element is the size of the i'th cluster
    * @return boolean        returns true if 1 or more pixel has been moved to a different cluster
    */
     private boolean assignCluster(int[] pixelArr, int[] clusterArr, int[] medoidArr, int[] diffArr, int[] clusterSizes){
@@ -142,10 +154,12 @@ public class GenColorPalette{
                 int medVal = pixelArr[medoidArr[j]];
                 if(Math.abs(medVal - pixelArr[i]) < diffArr[i]){
                     diffArr[i] = Math.abs(medVal - pixelArr[i]);
+                    
                     int oldCluster = clusterArr[i];
                     clusterArr[i] = j;
                     if(oldCluster != -1) clusterSizes[oldCluster] -= 1;
                     clusterSizes[j] += 1;
+                    
                     change = true;
                 }
             }
@@ -153,9 +167,34 @@ public class GenColorPalette{
         return change;
     }
 
+    /**
+     * calculates new medoids for each cluster
+     * @param pixelArr      pixel array
+     * @param clusterArr    (same size as pixelArr) i'th element has the index(of an element in medoidArr) of the cluster 
+     *                      that the i'th pixel in pixelArr belongs to
+     * @param medoidArr     (size CLUSTERS) i'th element has the index(of an element in pixelArr) thats the medoid of the i'th cluster
+     * @param clusterSizes  (size CLUSTERS) i'th element is the size of the i'th cluster
+     */
+    private void calcMedoids(int[] pixelArr, int[]clusterArr, int[] medoidArr, int[] clusterSizes){
+        int[] clustCounter = new int[CLUSTERS];
+        boolean[] medsCalc = new boolean[CLUSTERS];
+        int clustDone = 0;
+        for(int i = 0; i < pixelArr.length; i++){
+            
+            int cId = clusterArr[i];
+            if(medsCalc[cId]) continue;
 
-    private void calcMedoids(int[] pixelArr, int[] medoidArr, int[] clusterSizes){
+            clustCounter[cId] += 1;
+            int mid = Math.round(clusterSizes[cId]/2);
+            
+            if(clustCounter[cId] >= mid){
+                medoidArr[cId] = i;
+                medsCalc[cId] = true;
+                clustDone += 1;
+            }
 
+            if(clustDone >= medoidArr.length) break;
+        }
     }
 
     /**
