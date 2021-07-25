@@ -21,6 +21,9 @@ public class GenColorPalette{
     //final palette that is returned
     private int[] paletteColors = new int[CLUSTERS];
     
+    //current minimum cost
+    private double minCost = Double.MAX_VALUE;
+
     //for managing threads
     private final Object lock = new Object();
     private int iterationsDone = 0;
@@ -62,16 +65,26 @@ public class GenColorPalette{
                         Arrays.fill(clusterSizes, 1);           
                         
                         log(it + " INIT: " + Arrays.toString(meds));
-                        
+                        double cost = 0;
                         for(int j = 0; j < 100; j++){
-                            boolean changed = assignCluster(pixels, clusterIndex, meds, diffToMed, clusterSizes);      
-                            if(!changed) break;
+                            double[] changed = assignCluster(pixels, clusterIndex, meds, diffToMed, clusterSizes);      
+                            if(changed[0] == 1){
+                                cost = changed[1];
+                                break;
+                            }
                             calcMedoids(pixels, clusterIndex, meds, clusterSizes);
                             Arrays.fill(clusterSizes, 1);
                         }
-                        log(it + " FINAL: " + Arrays.toString(meds));
+                    
                         synchronized(lock){
                             iterationsDone += 1;
+                            if(cost < minCost){
+                                minCost = cost;
+                                for(int i = 0; i < meds.length; i++){
+                                    paletteColors[i] = pixels[meds[i]];
+                                }
+                            }
+                            if(iterationsDone == 9) log(it + " FINAL: " + Arrays.toString(paletteColors));
                         }
                     }
                     catch(Exception e){
@@ -137,7 +150,9 @@ public class GenColorPalette{
 
 
     /**
-   * puts every pixel in the cluster whose medoid is closest to that pixel 
+   * puts every pixel in the cluster whose medoid is closest to that pixel, 
+   * also calculates and returns the total cost(ie. sum of differences between pixels and their medoids) 
+   * of the entire pixel array
    * @param pixelArr        pixel array
    * @param clusterArr      (same size as pixelArr) i'th element has the index(of an element in medoidArr) of the cluster 
    *                        that the i'th pixel in pixelArr belongs to
@@ -145,14 +160,17 @@ public class GenColorPalette{
    * @param diffArr         (same size as pixelArr) i'th element is the absolute difference between the i'th element in pixelArr 
    *                        and the medoid of the cluster it belongs to
    * @param clusterSizes    (size CLUSTERS) i'th element is the size of the i'th cluster
-   * @return boolean        returns true if 1 or more pixel has been moved to a different cluster
+   * @return double[]       (size 2) returns whether any pixels have changed clusters, 
+   *                        and total cost 
    */
-    private boolean assignCluster(int[] pixelArr, int[] clusterArr, int[] medoidArr, int[] diffArr, int[] clusterSizes){
+    private double[] assignCluster(int[] pixelArr, int[] clusterArr, int[] medoidArr, int[] diffArr, int[] clusterSizes){
         boolean change = false;
+        double totalCost = 0;;
         for(int i = 0; i < pixelArr.length; i++){
             for(int j = 0; j < medoidArr.length; j++){
                 int medVal = pixelArr[medoidArr[j]];
                 if(Math.abs(medVal - pixelArr[i]) < diffArr[i]){
+                    
                     diffArr[i] = Math.abs(medVal - pixelArr[i]);
                     
                     int oldCluster = clusterArr[i];
@@ -163,8 +181,10 @@ public class GenColorPalette{
                     change = true;
                 }
             }
+            totalCost += diffArr[i];
         }
-        return change;
+        double[] res = new double[]{change ? 1 : 0,totalCost}; 
+        return res;
     }
 
     /**
