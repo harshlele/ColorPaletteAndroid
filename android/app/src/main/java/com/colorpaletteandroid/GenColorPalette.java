@@ -26,34 +26,33 @@ public class GenColorPalette{
 
     //for managing threads
     private final Object lock = new Object();
-    private int iterationsDone = 0;
+    private int iter = 0;
     private ExecutorService eService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-    
-    int i = 0;
+    //interface to send data from the worker threads to main thread
+    private PaletteCallback paletteCallback;
 
-    GenColorPalette(int[] pixels){
+    GenColorPalette(int[] pixels, PaletteCallback paletteCallback){
         this.pixels = pixels;
         Arrays.sort(this.pixels);
+        this.paletteCallback = paletteCallback;
     }
     
     /**
    * Generates colour palette from the pixel array
    * @param p The promise that is fired when colour palette has been generated 
    */
-    public void genPalette(Promise p){
+    public void genPalette(){
         if(this.pixels == null || this.pixels.length == 0) {
-            p.reject("Error: Pixels not set");
             return;
         }
         
 
-        for(i = 0; i < 10; i++){
+        for(int i = 0; i < 10; i++){
             eService.execute(new Runnable(){
                 int[] meds = new int[CLUSTERS];
                 int[] clusterSizes = new int[CLUSTERS];
                 int[] clusterIndex = new int[pixels.length];
                 int[] diffToMed = new int[pixels.length];
-                final int it = i; //for logging
                 @Override
                 public void run() {
                     try{
@@ -64,7 +63,6 @@ public class GenColorPalette{
                         //each cluster has at least 1 point(the medoid itself)
                         Arrays.fill(clusterSizes, 1);           
                         
-                        log(it + " INIT: " + Arrays.toString(meds));
                         double cost = 0;
                         for(int j = 0; j < 100; j++){
                             double[] changed = assignCluster(pixels, clusterIndex, meds, diffToMed, clusterSizes);      
@@ -77,18 +75,21 @@ public class GenColorPalette{
                         }
                     
                         synchronized(lock){
-                            iterationsDone += 1;
+                            iter += 1;
                             if(cost < minCost){
                                 minCost = cost;
                                 for(int i = 0; i < meds.length; i++){
                                     paletteColors[i] = pixels[meds[i]];
                                 }
+                                paletteCallback.onPaletteGen(paletteColors, false);
                             }
-                            if(iterationsDone == 9) log(it + " FINAL: " + Arrays.toString(paletteColors));
+                            //final callback is the one with the minimum cost clusters
+                            if(iter == 10) paletteCallback.onPaletteGen(paletteColors, true);
                         }
                     }
                     catch(Exception e){
                         Log.d("ColorPaletteModule", "Exception: " + e.getStackTrace()[0].getLineNumber() + " :: " + e.toString());
+                        paletteCallback.onError(e);
                     }
                 }
             });    
@@ -129,9 +130,7 @@ public class GenColorPalette{
                 if(centered) continue;
 
                 totalDist += minDist;
-                dists[i] = minDist;
-    
-                
+                dists[i] = minDist;    
 
             }
     
@@ -216,15 +215,6 @@ public class GenColorPalette{
             if(clustDone >= medoidArr.length) break;
         }
     }
-
-    /**
-   * simple log method 
-   * @param s String to log
-   */
-    private void log(String s){
-        Log.d("ColorPaletteModule", s);
-    }
-    
     
 
 }

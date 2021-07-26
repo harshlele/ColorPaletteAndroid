@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
   SafeAreaView,
   StatusBar,
@@ -18,7 +18,8 @@ import {
   Appearance,
   Animated, 
   Easing,
-  NativeModules
+  NativeModules,
+  NativeEventEmitter
 } from 'react-native';
 
 import {launchImageLibrary} from 'react-native-image-picker';
@@ -93,6 +94,24 @@ const App = () => {
       animImgWidth(320 * aspRatio);
     }
   };
+
+  //listen for events from the native module
+  useEffect(() => {
+    const eventEmitter = new NativeEventEmitter(NativeModules.ColorPaletteModule);
+    const paletteListener = eventEmitter.addListener('paletteGen',(event) => {
+      console.log(event.palette);
+      console.log(event.final);
+    });
+
+    const errorListener = eventEmitter.addListener('error',(event) => {
+      console.log(error.msg);
+    });
+
+    return () => {
+      paletteListener.remove();
+      errorListener.remove();
+    };
+  },[]);
   
   const onBtnPress = () => {
     launchImageLibrary({
@@ -117,11 +136,7 @@ const App = () => {
           setImage({uri: img.uri});
           
 
-          ColorPaletteModule.getColorPalette(img.uri).then(resp => {
-            console.log('IN JS: ' + resp);
-          }).catch(e => {
-            console.log('IN JS ERROR: ' + e);
-          });
+          ColorPaletteModule.getColorPalette(img.uri);
       
         }
       }
