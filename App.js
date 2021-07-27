@@ -13,6 +13,7 @@ import {
   StyleSheet,
   Text,
   Image,
+  FlatList,
   View,
   TouchableHighlight,
   Appearance,
@@ -32,6 +33,7 @@ const App = () => {
   const [currImage,setImage] = useState({});
   const dispImgW = useRef(new Animated.Value(320)).current;
   const dispImgH = useRef(new Animated.Value(320)).current;
+  const [palette,setPalette] = useState([]);
   
   const duration = 200;
   const easing = Easing.linear;
@@ -95,12 +97,31 @@ const App = () => {
     }
   };
 
+  const ListItem = ({ hex }) => (
+    <View style={{padding: 10, backgroundColor: hex}}>
+      <Text>{hex}</Text>
+    </View>
+  );
+
+  const renderItem = ({item}) => (
+    <ListItem hex={item.hex}></ListItem>
+  );
+
   //listen for events from the native module
   useEffect(() => {
     const eventEmitter = new NativeEventEmitter(NativeModules.ColorPaletteModule);
     const paletteListener = eventEmitter.addListener('paletteGen',(event) => {
-      console.log(event.palette);
-      console.log(event.final);
+      let palette = event.palette.map(c => {
+        //rgb to hex
+        let hex = `#${c.r.toString(16).padStart(2,'0')}${c.g.toString(16).padStart(2,'0')}${c.b.toString(16).padStart(2,'0')}`;
+
+        return {
+          ...c,
+          hex
+        }
+      });
+
+      setPalette(palette);
     });
 
     const errorListener = eventEmitter.addListener('error',(event) => {
@@ -124,20 +145,18 @@ const App = () => {
           let img = resp.assets[0];
           let aspRatio = img.width/img.height;
 
-          /*
-           width/height values from Image are more accurate (esp pics taken with the camera)
-          */
+          
+          //width/height values from Image are more accurate (esp pics taken with the camera)
           Image.getSize(img.uri,(width,height) => {
             setImgSize(width/height);
           }, (error) => {
             console.log(error);
             setImgSize(aspRatio);
           });
+
           setImage({uri: img.uri});
-          
 
           ColorPaletteModule.getColorPalette(img.uri);
-      
         }
       }
     });
@@ -152,6 +171,14 @@ const App = () => {
       <TouchableHighlight style={styles.pickBtnStyle} onPress={onBtnPress} activeOpacity={0.8} underlayColor={styles.containerStyle.backgroundColor}>
         <Text style={styles.btnTextStyle}>Pick Image</Text>
       </TouchableHighlight>
+      <FlatList
+        data={palette}
+        renderItem={renderItem}
+        keyExtractor={(item,index) => `color-${index}`}
+        horizontal={true}
+      >
+
+      </FlatList>
     </SafeAreaView>
   );
 };
