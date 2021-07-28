@@ -21,12 +21,12 @@ import {
   Animated, 
   Easing,
   NativeModules,
-  NativeEventEmitter
+  NativeEventEmitter,
+  ToastAndroid
 } from 'react-native';
-
 import {launchImageLibrary} from 'react-native-image-picker';
-
-import {ntc, colorLight, colorDark, colorAccent} from "./util/Color"; 
+import Clipboard from '@react-native-clipboard/clipboard';
+import {ntc, colorLight, colorDark, colorAccent} from './util/Color'; 
 
 const App = () => {
   
@@ -66,7 +66,7 @@ const App = () => {
       backgroundColor: isDarkMode ? colorDark : colorLight,
       flex: 1,
       alignItems: 'center',
-      justifyContent: 'space-between'
+      justifyContent: 'space-around'
     },
     pickBtnStyle: {
       width: '80%',
@@ -92,7 +92,9 @@ const App = () => {
       width: 80, 
       alignItems: 'center',
       justifyContent:'center', 
-      borderRadius: 40
+      borderRadius: 40,
+      borderWidth: 2,
+      borderColor: isDarkMode ? colorLight : colorDark
     }
   });
   /* end of styles/animations/color */
@@ -114,17 +116,26 @@ const App = () => {
   };
 
   /**
+   * Copies hex code to clipboard
+   * @param {string} hex  color hex code 
+   */
+  const copyColor = (hex) => {
+    Clipboard.setString(hex);
+    ToastAndroid.show('Copied to clipboard!',ToastAndroid.SHORT);
+  };
+
+  /**
    * Item component for the color list
    */
   const ListItem = ({ item }) => (
     <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 10, marginHorizontal: 10}}>
-      <TouchableOpacity style={{...styles.listItemStyle,backgroundColor: item.hex}}>
+      <TouchableOpacity style={{...styles.listItemStyle,backgroundColor: item.hex}} onPress={() => {copyColor(item.hex)}}>
         <View>
           <Text style={{fontSize: 12, color: item.textColor}}>{item.hex}</Text>
         </View>
       </TouchableOpacity>
-      <View style={{color: isDarkMode ? colorDark : colorLight, marginTop: 5}}>
-        <Text>{item.name}</Text>
+      <View style={{marginTop: 5}}>
+        <Text style={{color: isDarkMode ? colorLight : colorDark}}>{item.name}</Text>
       </View>
     </View>
   );
