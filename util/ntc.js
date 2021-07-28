@@ -1,4 +1,6 @@
 /*
+The NTC library, as a module
+NTC Doc:
 
 +-----------------------------------------------------------------+
 |     Created by Chirag Mehta - http://chir.ag/projects/ntc       |

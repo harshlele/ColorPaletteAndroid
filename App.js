@@ -16,6 +16,7 @@ import {
   FlatList,
   View,
   TouchableHighlight,
+  TouchableOpacity,
   Appearance,
   Animated, 
   Easing,
@@ -25,6 +26,7 @@ import {
 
 import {launchImageLibrary} from 'react-native-image-picker';
 
+import {ntc, colorLight, colorDark, colorAccent} from "./util/Color"; 
 
 const App = () => {
   
@@ -35,6 +37,7 @@ const App = () => {
   const dispImgH = useRef(new Animated.Value(320)).current;
   const [palette,setPalette] = useState([]);
   
+  /* styles/animations */
   const duration = 200;
   const easing = Easing.linear;
 
@@ -60,17 +63,16 @@ const App = () => {
   
   const styles = StyleSheet.create({
     containerStyle:{
-      backgroundColor: isDarkMode ? '#002b36' : '#fdf6e3',
+      backgroundColor: isDarkMode ? colorDark : colorLight,
       flex: 1,
       alignItems: 'center',
       justifyContent: 'space-between'
     },
     pickBtnStyle: {
       width: '80%',
-      backgroundColor: '#dc322f',
+      backgroundColor: colorAccent,
       borderRadius: 30,
-      paddingVertical: 20,  
-      marginBottom: 200,
+      paddingVertical: 20
     },
     btnTextStyle: {
       color: 'white',
@@ -79,13 +81,27 @@ const App = () => {
     },
     imgCoverStyle: { 
       padding: 5, 
-      backgroundColor: currImage.uri ? '#dc322f' : 'transparent', 
+      backgroundColor: currImage.uri ? colorAccent : 'transparent', 
       marginTop: 80, 
       marginBottom: 50, 
       borderRadius: 10
+    },
+    listItemStyle: {
+      padding: 10, 
+      height: 80, 
+      width: 80, 
+      alignItems: 'center',
+      justifyContent:'center', 
+      borderRadius: 40
     }
   });
+  /* end of styles/animations/color */
 
+
+  /**
+   * sets the image component width/height according to the aspect ratio 
+   * @param {number} aspRatio   aspect ratio(width/height) of image 
+   */
   const setImgSize = (aspRatio) => {
     if(aspRatio > 1){
       animImgWidth(320);
@@ -97,27 +113,46 @@ const App = () => {
     }
   };
 
-  const ListItem = ({ hex }) => (
-    <View style={{padding: 10, backgroundColor: hex}}>
-      <Text>{hex}</Text>
+  /**
+   * Item component for the color list
+   */
+  const ListItem = ({ item }) => (
+    <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 10, marginHorizontal: 10}}>
+      <TouchableOpacity style={{...styles.listItemStyle,backgroundColor: item.hex}}>
+        <View>
+          <Text style={{fontSize: 12, color: item.textColor}}>{item.hex}</Text>
+        </View>
+      </TouchableOpacity>
+      <View style={{color: isDarkMode ? colorDark : colorLight, marginTop: 5}}>
+        <Text>{item.name}</Text>
+      </View>
     </View>
   );
 
-  const renderItem = ({item}) => (
-    <ListItem hex={item.hex}></ListItem>
-  );
 
-  //listen for events from the native module
+  /**
+   * First load hook
+   */
   useEffect(() => {
+    //init ntc library
+    ntc.init();
+
+    //listen for events from native module
     const eventEmitter = new NativeEventEmitter(NativeModules.ColorPaletteModule);
     const paletteListener = eventEmitter.addListener('paletteGen',(event) => {
-      let palette = event.palette.map(c => {
-        //rgb to hex
-        let hex = `#${c.r.toString(16).padStart(2,'0')}${c.g.toString(16).padStart(2,'0')}${c.b.toString(16).padStart(2,'0')}`;
+      let palette = event.palette.map((c,i) => {
+        let hex = ntc.rgbToHex(c);
+        let hsl = ntc.hsl(hex);
 
         return {
           ...c,
-          hex
+          h: hsl[0],
+          s: hsl[1],
+          l: hsl[2],
+          hex: hex.toUpperCase(),
+          key: `color-${i}`,
+          textColor: ntc.getTextColor(c),
+          name: ntc.name(hex)[1]
         }
       });
 
@@ -125,7 +160,7 @@ const App = () => {
     });
 
     const errorListener = eventEmitter.addListener('error',(event) => {
-      console.log(error.msg);
+      console.log(event.msg);
     });
 
     return () => {
@@ -133,7 +168,10 @@ const App = () => {
       errorListener.remove();
     };
   },[]);
-  
+
+  /**
+   * pick image button click listener
+   */
   const onBtnPress = () => {
     launchImageLibrary({
       mediaType: 'photo',
@@ -155,7 +193,7 @@ const App = () => {
           });
 
           setImage({uri: img.uri});
-
+          setPalette([]);
           ColorPaletteModule.getColorPalette(img.uri);
         }
       }
@@ -173,11 +211,11 @@ const App = () => {
       </TouchableHighlight>
       <FlatList
         data={palette}
-        renderItem={renderItem}
-        keyExtractor={(item,index) => `color-${index}`}
+        renderItem={ListItem}
+        keyExtractor={(item) => item.key}
         horizontal={true}
+        style={{width: '100%', marginTop: 20}}
       >
-
       </FlatList>
     </SafeAreaView>
   );
