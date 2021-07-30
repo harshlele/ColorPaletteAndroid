@@ -80,11 +80,12 @@ const App = () => {
       fontSize: 18
     },
     imgCoverStyle: { 
-      padding: 5, 
-      backgroundColor: currImage.uri ? colorAccent : 'transparent', 
+      backgroundColor: 'transparent', 
       marginTop: 80, 
-      marginBottom: 50, 
-      borderRadius: 10
+      marginBottom: 50,
+      width: 330,
+      height: 330,
+      alignItems: 'center'
     },
     listItemStyle: {
       padding: 10, 
@@ -194,7 +195,7 @@ const App = () => {
           let img = resp.assets[0];
           let aspRatio = img.width/img.height;
 
-          
+          setImage({uri: img.uri});
           //width/height values from Image are more accurate (esp pics taken with the camera)
           Image.getSize(img.uri,(width,height) => {
             setImgSize(width/height);
@@ -202,8 +203,7 @@ const App = () => {
             console.log(error);
             setImgSize(aspRatio);
           });
-
-          setImage({uri: img.uri});
+  
           setPalette([]);
           ColorPaletteModule.getColorPalette(img.uri);
         }
@@ -215,7 +215,9 @@ const App = () => {
     <SafeAreaView style={styles.containerStyle}>
       <StatusBar backgroundColor={styles.containerStyle.backgroundColor} barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent={false} />
       <View style={styles.imgCoverStyle}>
-        <Animated.Image style={{ width: dispImgW, height: dispImgH, borderRadius: 5}} source={currImage} resizeMode='contain'></Animated.Image>
+        <View style={{borderWidth: 5, borderRadius: 10, borderColor: currImage.uri ? colorAccent : 'transparent'}}>
+          <Animated.Image style={{ width: dispImgW, height: dispImgH, borderRadius: 7}} source={currImage} resizeMode='contain'></Animated.Image>
+        </View>  
       </View> 
       <TouchableHighlight style={styles.pickBtnStyle} onPress={onBtnPress} activeOpacity={0.8} underlayColor={styles.containerStyle.backgroundColor}>
         <Text style={styles.btnTextStyle}>Pick Image</Text>
