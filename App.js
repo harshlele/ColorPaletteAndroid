@@ -22,10 +22,13 @@ import {
   Easing,
   NativeModules,
   NativeEventEmitter,
-  ToastAndroid
+  ToastAndroid,
+  PermissionsAndroid
 } from 'react-native';
 import {launchImageLibrary} from 'react-native-image-picker';
 import Clipboard from '@react-native-clipboard/clipboard';
+import LottieView from 'lottie-react-native';
+
 import {ntc, colorLight, colorDark, colorAccent} from './util/Color'; 
 
 const App = () => {
@@ -36,6 +39,7 @@ const App = () => {
   const dispImgW = useRef(new Animated.Value(320)).current;
   const dispImgH = useRef(new Animated.Value(320)).current;
   const [palette,setPalette] = useState([]);
+  const [loading, setLoading] = useState(false);
   
   /* styles/animations */
   const duration = 200;
@@ -126,6 +130,22 @@ const App = () => {
   };
 
   /**
+   * Checks if the app has read storage permission (and asks for the permission if it doesn't)
+   * @returns {Promise} promise that fulfills with a status of whether the app has the storage permission or not
+   */
+  const checkStoragePermission = () => {
+    return new Promise(async (resolve) => {
+      let status = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);      
+      if(status == PermissionsAndroid.RESULTS.GRANTED) resolve(true);
+      else{
+        let askPerm = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
+        if(askPerm == PermissionsAndroid.RESULTS.GRANTED) resolve(true);
+        else resolve(false);
+      }
+    });
+  };
+
+  /**
    * Item component for the color list
    */
   const ListItem = ({ item }) => (
@@ -169,6 +189,7 @@ const App = () => {
       });
 
       setPalette(palette);
+      if(event.final) setLoading(false);
     });
 
     const errorListener = eventEmitter.addListener('error',(event) => {
@@ -184,7 +205,15 @@ const App = () => {
   /**
    * pick image button click listener
    */
-  const onBtnPress = () => {
+  const onBtnPress = async () => {
+
+    const permission = await checkStoragePermission();
+
+    if(!permission){
+      ToastAndroid.show('Error while checking for storage permission, please grant the app storage permissions through the settings', ToastAndroid.LONG);
+      return;
+    }
+
     launchImageLibrary({
       mediaType: 'photo',
       quality: 1,
@@ -205,6 +234,7 @@ const App = () => {
           });
   
           setPalette([]);
+          setLoading(true);
           ColorPaletteModule.getColorPalette(img.uri);
         }
       }
@@ -222,14 +252,21 @@ const App = () => {
       <TouchableHighlight style={styles.pickBtnStyle} onPress={onBtnPress} activeOpacity={0.8} underlayColor={styles.containerStyle.backgroundColor}>
         <Text style={styles.btnTextStyle}>Pick Image</Text>
       </TouchableHighlight>
-      <FlatList
-        data={palette}
-        renderItem={ListItem}
-        keyExtractor={(item) => item.key}
-        horizontal={true}
+      <View
         style={{width: '100%', marginTop: 20}}
       >
-      </FlatList>
+        {
+          loading && <LottieView source={require('./assets/loading-animation.json')} autoPlay loop style={{zIndex: 1}}/>
+        }
+        <FlatList
+          data={palette}
+          renderItem={ListItem}
+          keyExtractor={(item) => item.key}
+          horizontal={true}  
+          style={{zIndex: 0, opacity: loading ? 0.3 : 1}}
+        > 
+        </FlatList>
+      </View>
     </SafeAreaView>
   );
 };
