@@ -207,8 +207,9 @@ const App = () => {
    */
   const onBtnPress = async () => {
 
-    const permission = await checkStoragePermission();
+    if(loading) return;
 
+    const permission = await checkStoragePermission();
     if(!permission){
       ToastAndroid.show('Error while checking for storage permission, please grant the app storage permissions through the settings', ToastAndroid.LONG);
       return;
@@ -241,22 +242,34 @@ const App = () => {
     });
   };
 
+  const currImageView = () => {
+    if(!currImage.uri){
+      return (<LottieView source={require('./assets/anim/color-palette.json')} autoPlay loop style={{zIndex: 1}}/>);
+    }
+    else{  
+      return (<View style={{borderWidth: 5, borderRadius: 10, borderColor: currImage.uri ? colorAccent : 'transparent'}}>
+              <Animated.Image style={{ width: dispImgW, height: dispImgH, borderRadius: 7}} source={currImage} resizeMode='contain'></Animated.Image>
+            </View>);  
+    
+    }
+  }
+
   return (
     <SafeAreaView style={styles.containerStyle}>
       <StatusBar backgroundColor={styles.containerStyle.backgroundColor} barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent={false} />
       <View style={styles.imgCoverStyle}>
-        <View style={{borderWidth: 5, borderRadius: 10, borderColor: currImage.uri ? colorAccent : 'transparent'}}>
-          <Animated.Image style={{ width: dispImgW, height: dispImgH, borderRadius: 7}} source={currImage} resizeMode='contain'></Animated.Image>
-        </View>  
+        {
+          currImageView()
+        }
       </View> 
       <TouchableHighlight style={styles.pickBtnStyle} onPress={onBtnPress} activeOpacity={0.8} underlayColor={styles.containerStyle.backgroundColor}>
         <Text style={styles.btnTextStyle}>Pick Image</Text>
       </TouchableHighlight>
       <View
-        style={{width: '100%', marginTop: 20}}
+        style={{width: '100%', height: 124, marginTop: 20}}
       >
         {
-          loading && <LottieView source={require('./assets/loading-animation.json')} autoPlay loop style={{zIndex: 1}}/>
+          loading && <LottieView source={require('./assets/anim/loading-animation.json')} autoPlay loop style={{zIndex: 1}}/>
         }
         <FlatList
           data={palette}
