@@ -225,6 +225,9 @@ const App = () => {
           let img = resp.assets[0];
           let aspRatio = img.width/img.height;
 
+          setPalette([]);
+          setLoading(true);
+
           setImage({uri: img.uri});
           //width/height values from Image are more accurate (esp pics taken with the camera)
           Image.getSize(img.uri,(width,height) => {
@@ -233,10 +236,8 @@ const App = () => {
             console.log(error);
             setImgSize(aspRatio);
           });
-  
-          setPalette([]);
-          setLoading(true);
-          ColorPaletteModule.getColorPalette(img.uri);
+          
+          ColorPaletteModule.getColorPalette(img.uri);  
         }
       }
     });
