@@ -1,7 +1,5 @@
 package com.colorpaletteandroid;
 
-import com.facebook.react.bridge.Promise;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
@@ -39,14 +37,12 @@ public class GenColorPalette{
     
     /**
    * Generates colour palette from the pixel array
-   * @param p The promise that is fired when colour palette has been generated 
    */
     public void genPalette(){
         if(this.pixels == null || this.pixels.length == 0) {
             return;
         }
         
-
         for(int i = 0; i < 10; i++){
             eService.execute(new Runnable(){
                 int[] meds = new int[CLUSTERS];

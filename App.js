@@ -243,9 +243,13 @@ const App = () => {
     });
   };
 
+  /**
+   * returns the imageview
+   * @returns   ImageView if image has been picked, or an image animation if not
+   */
   const currImageView = () => {
     if(!currImage.uri){
-      return (<LottieView source={require('./assets/anim/color-palette.json')} autoPlay loop style={{zIndex: 1}}/>);
+      return (<LottieView source={require('./assets/anim/image.json')} autoPlay loop style={{zIndex: 1}}/>);
     }
     else{  
       return (<View style={{borderWidth: 5, borderRadius: 10, borderColor: currImage.uri ? colorAccent : 'transparent'}}>
