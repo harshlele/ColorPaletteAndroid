@@ -14,7 +14,7 @@ const colorAccent = '#dc322f';
  */
 ntc.rgbToHex = (color) => {
     return `#${color.r.toString(16).padStart(2,'0')}${color.g.toString(16).padStart(2,'0')}${color.b.toString(16).padStart(2,'0')}`.toUpperCase();
-}
+};
 
 /**
  * calculates and returns the text color appropriate for a given background color
@@ -27,6 +27,33 @@ ntc.getTextColor = (color) => {
     
     if (hsp<=127.5) return colorLight; 
     else return colorDark;
-}
+};
+
+/**
+ * 
+ * @param {Array} colorArr  color array
+ */
+ntc.genSmallPalette = (colorArr) => {
+
+    let satRank = [...Array(colorArr.length).keys()];
+    let lumRank = [...Array(colorArr.length).keys()];
+    let sizeRank = [...Array(colorArr.length).keys()];
+    let fRank = [...Array(colorArr.length).keys()];
+
+    satRank.sort((i1,i2) => (colorArr[i2].s) - (colorArr[i1].s));
+    lumRank.sort((i1,i2) => Math.abs(colorArr[i1].l - 127) - Math.abs(colorArr[i2].l - 127));
+    sizeRank.sort((i1,i2) => i2.cSize - i1.cSize);
+
+    fRank.sort((e1,e2) => {
+        let f1 = (satRank.indexOf(e1) + 1) * (lumRank.indexOf(e1) + 1) * (sizeRank.indexOf(e1) + 1);
+        let f2 = (satRank.indexOf(e2) + 1) * (lumRank.indexOf(e2) + 1) * (sizeRank.indexOf(e2) + 1);
+        return f1 - f2;
+    });
+
+    let sArr = fRank.map(e => colorArr[e]);
+
+    return sArr;
+
+};
 
 module.exports = {ntc,colorLight,colorDark,colorAccent}

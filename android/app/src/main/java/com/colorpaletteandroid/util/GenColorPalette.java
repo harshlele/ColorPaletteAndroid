@@ -13,7 +13,7 @@ import android.util.Log;
 
 public class GenColorPalette{
     //no of clusters(ie. no of colors in the palette)   
-    private static int CLUSTERS = 10;
+    private static int CLUSTERS = 16;
     //pixel array
     private int[] pixels;
     //final palette that is returned
@@ -77,10 +77,10 @@ public class GenColorPalette{
                                 for(int i = 0; i < meds.length; i++){
                                     paletteColors[i] = pixels[meds[i]];
                                 }
-                                paletteCallback.onPaletteGen(paletteColors, false);
+                                paletteCallback.onPaletteGen(paletteColors, clusterSizes, false);
                             }
                             //final callback is the one with the minimum cost clusters
-                            if(iter == 10) paletteCallback.onPaletteGen(paletteColors, true);
+                            if(iter == 10) paletteCallback.onPaletteGen(paletteColors, clusterSizes, true);
                         }
                     }
                     catch(Exception e){

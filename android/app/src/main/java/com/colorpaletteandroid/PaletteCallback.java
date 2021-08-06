@@ -6,6 +6,6 @@ package com.colorpaletteandroid;
  * onError is called after an Exception 
  */
 interface PaletteCallback{
-    void onPaletteGen(int[] palette, boolean Final);
+    void onPaletteGen(int[] palette,int[] clusterSizes, boolean Final);
     void onError(Exception e);
 }

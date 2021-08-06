@@ -184,12 +184,17 @@ const App = () => {
           hex: hex.toUpperCase(),
           key: `color-${i}`,
           textColor: ntc.getTextColor(c),
-          name: ntc.name(hex)[1]
+          name: ntc.name(hex)[1],
+          cSize: event.sizes[i]
         }
       });
 
-      setPalette(palette);
-      if(event.final) setLoading(false);
+      if(event.final) {
+        let sArr = ntc.genSmallPalette(palette);
+        setPalette(sArr);
+        setLoading(false);
+      }
+      else setPalette(palette);
     });
 
     const errorListener = eventEmitter.addListener('error',(event) => {

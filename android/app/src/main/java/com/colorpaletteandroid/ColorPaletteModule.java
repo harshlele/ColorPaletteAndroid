@@ -58,16 +58,11 @@ public class ColorPaletteModule extends ReactContextBaseJavaModule implements Pa
             in.close();
 
             //calculate down-scaled width/height
-            int newWidth,newHeight,maxVal;
+            int newWidth,newHeight,maxVal = 500;
             int width = options.outWidth; 
             int height = options.outHeight;
             float aspectRatio = width / (float) height;
             
-
-            if(Runtime.getRuntime().availableProcessors() > 4)
-                maxVal = 1000;
-            else
-                maxVal = 500;
 
             if(width > height){
                 newWidth = maxVal;
@@ -111,10 +106,11 @@ public class ColorPaletteModule extends ReactContextBaseJavaModule implements Pa
 
     /**
      * Called by the worker threads after a palette has been generated
-     * @param palette   array containing the colors generated from the image
-     * @param Final     if true, this is the lowest-cost solution
+     * @param palette       array containing the colors generated from the image
+     * @param clusterSizes  array containing size of each cluster   
+     * @param Final         if true, this is the lowest-cost solution
      */
-    public void onPaletteGen(int[] palette, boolean Final){
+    public void onPaletteGen(int[] palette, int[] clusterSizes, boolean Final){
         WritableArray paletteArr = new WritableNativeArray();
         for(int i = 0; i < palette.length; i++){
             WritableMap map = Arguments.createMap();
@@ -124,8 +120,14 @@ public class ColorPaletteModule extends ReactContextBaseJavaModule implements Pa
             paletteArr.pushMap(map);
         }
 
+        WritableArray sizeArr = new WritableNativeArray();
+        for(int i = 0; i < clusterSizes.length; i++){
+            sizeArr.pushInt(clusterSizes[i]);
+        }
+
         WritableMap resMap = Arguments.createMap();
         resMap.putArray("palette",paletteArr);
+        resMap.putArray("sizes",sizeArr);
         resMap.putBoolean("final",Final);
 
         ((ReactContext)c).getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit("paletteGen", resMap);
