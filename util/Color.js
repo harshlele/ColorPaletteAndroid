@@ -30,8 +30,9 @@ ntc.getTextColor = (color) => {
 };
 
 /**
- * 
+ * selects 5 colours from color array with the most saturation, biggest cluster size, and luminance closest to 50%
  * @param {Array} colorArr  color array
+ * @returns {Array} small palette
  */
 ntc.genSmallPalette = (colorArr) => {
 
@@ -50,10 +51,7 @@ ntc.genSmallPalette = (colorArr) => {
         return f1 - f2;
     });
 
-    let sArr = fRank.map(e => colorArr[e]);
-
-    return sArr;
-
+    return fRank.slice(0,5).map(i => colorArr[i]);
 };
 
 module.exports = {ntc,colorLight,colorDark,colorAccent}
