@@ -13,10 +13,8 @@ import {
   StyleSheet,
   Text,
   Image,
-  FlatList,
   View,
   TouchableHighlight,
-  TouchableOpacity,
   Appearance,
   Animated, 
   Easing,
@@ -30,6 +28,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import LottieView from 'lottie-react-native';
 
 import {ntc, colorLight, colorDark, colorAccent} from './util/Color'; 
+import ColorList from './src/components/ColorList';
 
 const App = () => {
   
@@ -145,23 +144,7 @@ const App = () => {
     });
   };
 
-  /**
-   * Item component for the color list
-   */
-  const ListItem = ({ item }) => (
-    <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 10, marginHorizontal: 10}}>
-      <TouchableOpacity style={{...styles.listItemStyle,backgroundColor: item.hex}} onPress={() => {copyColor(item.hex)}}>
-        <View>
-          <Text style={{fontSize: 12, color: item.textColor}}>{item.hex}</Text>
-        </View>
-      </TouchableOpacity>
-      <View style={{marginTop: 5}}>
-        <Text style={{color: isDarkMode ? colorLight : colorDark}}>{item.name}</Text>
-      </View>
-    </View>
-  );
-
-
+  
   /**
    * First load hook
    */
@@ -281,14 +264,7 @@ const App = () => {
         {
           loading && <LottieView source={require('./assets/anim/loading-animation.json')} autoPlay loop style={{zIndex: 1}}/>
         }
-        <FlatList
-          data={palette}
-          renderItem={ListItem}
-          keyExtractor={(item) => item.key}
-          horizontal={true}  
-          style={{zIndex: 0, opacity: loading ? 0.3 : 1}}
-        > 
-        </FlatList>
+        <ColorList colorList={palette} onColorPress={(item) => {copyColor(item.hex)}} listItemStyle={styles.listItemStyle} translucent={loading} isDarkMode={isDarkMode}/>
       </View>
     </SafeAreaView>
   );
