@@ -60,3 +60,5 @@ buck-out/
 
 
 .vscode/.react
+
+android/app/release_keystore.jks
